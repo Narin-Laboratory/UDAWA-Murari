@@ -60,10 +60,40 @@ void storageConvertAppConfig(JsonDocument &doc, bool direction, bool load_defaul
 
 void storageConvertAppState(JsonDocument &doc, bool direction, bool load_defaults){
   if(direction){ // from doc to state
-    if(!doc["fPanic"].isNull()) appState.fPanic = doc["fPanic"].as<bool>(); else if(load_defaults) appState.fPanic = false;
+    if(!doc["fBattSensor"].isNull()) appState.fBattSensor = doc["fBattSensor"].as<bool>(); else if(load_defaults) appState.fBattSensor = false;
+    if(!doc["fSHTSensor"].isNull()) appState.fSHTSensor = doc["fSHTSensor"].as<bool>(); else if(load_defaults) appState.fSHTSensor = false;
+    if(!doc["fBHSensor"].isNull()) appState.fBHSensor = doc["fBHSensor"].as<bool>(); else if(load_defaults) appState.fBHSensor = false;
+    // Note: xHandleEnviroSensor and xReturnedEnviroSensor are not serialized (runtime handles)
+    if(!doc["enviroSensorTaskRoutineLastActivity"].isNull()) appState.enviroSensorTaskRoutineLastActivity = doc["enviroSensorTaskRoutineLastActivity"].as<unsigned long>(); else if(load_defaults) appState.enviroSensorTaskRoutineLastActivity = 0;
+    if(!doc["fSaveAppState"].isNull()) appState.fSaveAppState = doc["fSaveAppState"].as<bool>(); else if(load_defaults) appState.fSaveAppState = false;
+    if(!doc["fsyncClientAttributes"].isNull()) appState.fsyncClientAttributes = doc["fsyncClientAttributes"].as<bool>(); else if(load_defaults) appState.fsyncClientAttributes = false;
+    if(!doc["fSaveAllState"].isNull()) appState.fSaveAllState = doc["fSaveAllState"].as<bool>(); else if(load_defaults) appState.fSaveAllState = false;
+    if(!doc["lastWebBcast"].isNull()) appState.lastWebBcast = doc["lastWebBcast"].as<unsigned long>(); else if(load_defaults) appState.lastWebBcast = 0;
+    if(!doc["lastAttrBcast"].isNull()) appState.lastAttrBcast = doc["lastAttrBcast"].as<unsigned long>(); else if(load_defaults) appState.lastAttrBcast = 0;
+    if(!doc["battADC"].isNull()) appState.battADC = doc["battADC"].as<float>(); else if(load_defaults) appState.battADC = 0.0;
+    if(!doc["battVolt"].isNull()) appState.battVolt = doc["battVolt"].as<float>(); else if(load_defaults) appState.battVolt = 0.0;
+    if(!doc["battPercent"].isNull()) appState.battPercent = doc["battPercent"].as<float>(); else if(load_defaults) appState.battPercent = 0.0;
+    if(!doc["battAccurPercent"].isNull()) appState.battAccurPercent = doc["battAccurPercent"].as<float>(); else if(load_defaults) appState.battAccurPercent = 0.0;
+    if(!doc["lastBattGaugeRead"].isNull()) appState.lastBattGaugeRead = doc["lastBattGaugeRead"].as<unsigned long>(); else if(load_defaults) appState.lastBattGaugeRead = 0;
+    if(!doc["intvReadBattGauge"].isNull()) appState.intvReadBattGauge = doc["intvReadBattGauge"].as<uint16_t>(); else if(load_defaults) appState.intvReadBattGauge = 60;
   }
   else{ // from state to doc
-    doc[PSTR("fPanic")] = appState.fPanic;
+    doc[PSTR("fBattSensor")] = appState.fBattSensor;
+    doc[PSTR("fSHTSensor")] = appState.fSHTSensor;
+    doc[PSTR("fBHSensor")] = appState.fBHSensor;
+    // Note: xHandleEnviroSensor and xReturnedEnviroSensor are not serialized (runtime handles)
+    doc[PSTR("enviroSensorTaskRoutineLastActivity")] = appState.enviroSensorTaskRoutineLastActivity;
+    doc[PSTR("fSaveAppState")] = appState.fSaveAppState;
+    doc[PSTR("fsyncClientAttributes")] = appState.fsyncClientAttributes;
+    doc[PSTR("fSaveAllState")] = appState.fSaveAllState;
+    doc[PSTR("lastWebBcast")] = appState.lastWebBcast;
+    doc[PSTR("lastAttrBcast")] = appState.lastAttrBcast;
+    doc[PSTR("battADC")] = appState.battADC;
+    doc[PSTR("battVolt")] = appState.battVolt;
+    doc[PSTR("battPercent")] = appState.battPercent;
+    doc[PSTR("battAccurPercent")] = appState.battAccurPercent;
+    doc[PSTR("lastBattGaugeRead")] = appState.lastBattGaugeRead;
+    doc[PSTR("intvReadBattGauge")] = appState.intvReadBattGauge;
   }
 }
 

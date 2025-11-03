@@ -49,6 +49,7 @@ struct AppConfig {
 };
 
 struct AppState {
+    bool fBattSensor = false;
     bool fSHTSensor = false;
     bool fBHSensor = false;
     TaskHandle_t xHandleEnviroSensor = NULL;
@@ -57,12 +58,18 @@ struct AppState {
     bool fSaveAppState = false;
     bool fsyncClientAttributes = false;
     bool fSaveAllState = false;
-    bool fPanic = false;
 
     // Transient state variables, moved from coreroutineLoop
-    bool panic_action_taken = false;
     unsigned long lastWebBcast = 0;
     unsigned long lastAttrBcast = 0;
+
+    float battADC = 0.0;
+    float battVolt = 0.0;
+    float battPercent = 0.0;
+    float battAccurPercent = 0.0;
+    unsigned long lastBattGaugeRead = 0;
+    uint16_t intvReadBattGauge = 60;
+
 };
 
 extern UdawaConfig config;

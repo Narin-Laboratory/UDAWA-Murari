@@ -13,6 +13,8 @@
 #define USE_SHT4X
 #endif
 
+#define USE_MAX17048
+
 #define USE_BH1750
 
 #define USE_WIFI_OTA
@@ -161,6 +163,21 @@ const float rhSafeLow    = 15.0;  // %RH
  *
  * 220 IOExtender
  * 220 = The IOExtender failed to initialize; please check the module integration and wiring.
+ * 
+ * 230 Water Quality Sensors (TDS/EC)
+ * 230 = The TDS sensor failed to initialize; please check the ADS1115 module integration and wiring.
+ * 231 = The TDS sensor measurement is abnormal; The TDS reading is out of range.
+ * 232 = The TDS sensor measurement is showing an extreme value; The TDS is exceeding safe threshold (water quality poor).
+ * 233 = The TDS sensor measurement is showing an extreme value; The TDS is below safe threshold (water too pure/unstable).
+ * 234 = The EC sensor measurement is abnormal; The EC reading is out of range.
+ * 235 = The EC sensor measurement is showing an extreme value; The EC is exceeding safe threshold.
+ * 236 = The EC sensor measurement is showing an extreme value; The EC is below safe threshold.
+ * 
+ * 240 Water Temperature Sensor (DS18B20)
+ * 240 = The water temperature sensor failed to initialize; please check the DS18B20 wiring and pull-up resistor.
+ * 241 = The water temperature measurement is abnormal; The temperature reading is out of range.
+ * 242 = The water temperature is exceeding safe threshold; Water may be too hot for intended use.
+ * 243 = The water temperature is below safe threshold; Water may be too cold or frozen.
  * */
  
 // Standardized Alarm Codes
@@ -215,6 +232,21 @@ enum AlarmCode : uint16_t {
 
 	// 220 IO Extender
 	ALARM_IOEXTENDER_INIT_FAIL             = 220,
+
+	// 230 Water Quality Sensors (TDS/EC)
+	ALARM_TDS_SENSOR_INIT_FAIL             = 230,
+	ALARM_TDS_OUT_OF_RANGE                 = 231,
+	ALARM_TDS_EXCEED_HIGH                  = 232,
+	ALARM_TDS_BELOW_LOW                    = 233,
+	ALARM_EC_OUT_OF_RANGE                  = 234,
+	ALARM_EC_EXCEED_HIGH                   = 235,
+	ALARM_EC_BELOW_LOW                     = 236,
+
+	// 240 Water Temperature Sensor (DS18B20)
+	ALARM_WATER_TEMP_SENSOR_INIT_FAIL      = 240,
+	ALARM_WATER_TEMP_OUT_OF_RANGE          = 241,
+	ALARM_WATER_TEMP_EXCEED_HIGH           = 242,
+	ALARM_WATER_TEMP_BELOW_LOW             = 243,
 };
 
 #endif

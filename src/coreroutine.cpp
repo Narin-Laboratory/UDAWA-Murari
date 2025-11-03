@@ -48,6 +48,11 @@ SensirionI2cSht4x sht;
 BH1750 bh1750(LOW);
 #endif
 
+#ifdef USE_MAX17048
+MAX17048 max17048;
+#endif
+
+
 void reboot(int countDown = 0){
   crashState.plannedRebootCountDown = countDown;
   crashState.fPlannedReboot = true;
@@ -86,16 +91,20 @@ void coreroutineSetup(){
       }
     }
     if(xHandleEnviroSensor == NULL){
-      appState.xReturnedEnviroSensor = xTaskCreatePinnedToCore(coreroutineEnviroSensorTaskRoutine, PSTR("enviroSensor"), 4096, NULL, 1, &appState.xHandleEnviroSensor, 1);
+      appState.xReturnedEnviroSensor = xTaskCreatePinnedToCore(coreroutineWaterSensorTaskRoutine, PSTR("enviroSensor"), 4096, NULL, 1, &appState.xHandleEnviroSensor, 1);
       if(appState.xReturnedEnviroSensor == pdPASS){
           logger->warn(PSTR(__func__), PSTR("Task enviroSensor has been created.\n"));
       }
     }
     
-  coreroutineSetAlarm(ALARM_NONE, 1, 3, 50);
-
+    coreroutineSetLEDBuzzer(1, false, 3, 50);
 
     crashState.rtcp = 0;
+
+    #ifdef USE_MAX17048
+    max17048.attatch(Wire);
+    coreroutineReadBatteryGauge();
+    #endif
 
     #ifdef USE_LOCAL_WEB_INTERFACE
     if(xSemaphoreWSBroadcast == NULL){xSemaphoreWSBroadcast = xSemaphoreCreateMutex();}
@@ -215,6 +224,11 @@ void coreroutineLoop(){
         sysInfo[PSTR("uptime")] = now;
         sysInfo[PSTR("datetime")] = RTC.getDateTime();
         sysInfo[PSTR("rssi")] = wiFiHelper.rssiToPercent(WiFi.RSSI());
+        #ifdef USE_MAX17048
+        sysInfo[PSTR("batt")] = appState.battAccurPercent > 100.0 ? 100.0 : appState.battAccurPercent;
+        #else
+        sysInfo[PSTR("batt")] = 100;
+        #endif
 
         wsBcast(doc);
         appState.lastWebBcast = now;
@@ -229,11 +243,44 @@ void coreroutineLoop(){
         doc[PSTR("uptime")] = now;
         doc[PSTR("datetime")] = RTC.getDateTime();
         doc[PSTR("rssi")] = wiFiHelper.rssiToPercent(WiFi.RSSI());
+        #ifdef USE_MAX17048
+        doc[PSTR("batt")] = appState.battAccurPercent > 100.0 ? 100.0 : appState.battAccurPercent;
+        #endif
         iotSendAttr(doc);
         appState.lastAttrBcast = now;
       }
     #endif
+
+  #ifdef USE_MAX17048
+  if(now - appState.lastBattGaugeRead > appState.intvReadBattGauge * 1000){
+    coreroutineReadBatteryGauge();
+    appState.lastBattGaugeRead = now;
+  }
+  #endif
 }
+
+#ifdef USE_MAX17048
+void coreroutineReadBatteryGauge(){
+  appState.fBattSensor = !isnan(max17048.id());
+  appState.battADC = max17048.adc();
+  appState.battVolt = max17048.voltage();
+  appState.battPercent = max17048.percent();
+  appState.battAccurPercent = max17048.accuratePercent();
+
+  #ifdef USE_IOT
+  JsonDocument doc;
+
+  doc[PSTR("battADC")] = appState.battADC;
+  doc[PSTR("battVolt")] = appState.battVolt;
+  doc[PSTR("battPercent")] = appState.battPercent;
+  doc[PSTR("battAccurPercent")] = appState.battAccurPercent;
+  iotSendTele(doc);
+  #endif
+
+  logger->debug(PSTR(__func__), PSTR("Battery - ADC: %.2f, Volt: %.2fV, Percent: %.2f%%, Accurate: %.2f%%\n"), 
+    appState.battADC, appState.battVolt, appState.battPercent, appState.battAccurPercent);
+}
+#endif
 
 void coreroutineDoInit(){
     logger->warn(PSTR(__func__), PSTR("Starting services setup protocol!\n"));
@@ -474,42 +521,42 @@ void coreroutineSetLEDBuzzer(uint8_t color, uint8_t isBlink, int32_t blinkCount,
   //Auto by network
   case 0:
     if(false){
-      r = config.state.LEDOn == false ? true : false;
-      g = config.state.LEDOn == false ? true : false;
+      r = !config.state.LEDOn;
+      g = !config.state.LEDOn;
       b = config.state.LEDOn;
     }
     else if(WiFi.status() == WL_CONNECTED && WiFi.getMode() == WIFI_MODE_STA){
-      r = config.state.LEDOn == false ? true : false;
+      r = !config.state.LEDOn;
       g = config.state.LEDOn;
-      b = config.state.LEDOn == false ? true : false;
+      b = !config.state.LEDOn;
     }
     else if(WiFi.status() == WL_CONNECTED && WiFi.getMode() == WIFI_MODE_AP && WiFi.softAPgetStationNum() > 0){
-      r = config.state.LEDOn == false ? true : false;
+      r = !config.state.LEDOn;
       g = config.state.LEDOn;
-      b = config.state.LEDOn == false ? true : false;
+      b = !config.state.LEDOn;
     }
     else{
       r = config.state.LEDOn;
-      g = config.state.LEDOn == false ? true : false;
-      b = config.state.LEDOn == false ? true : false;
+      g = !config.state.LEDOn;
+      b = !config.state.LEDOn;
     }
     break;
   //RED
   case 1:
     r = config.state.LEDOn;
-    g = config.state.LEDOn == false ? true : false;
-    b = config.state.LEDOn == false ? true : false;
+    g = !config.state.LEDOn;
+    b = !config.state.LEDOn;
     break;
   //GREEN
   case 2:
-    r = config.state.LEDOn == false ? true : false;
+    r = !config.state.LEDOn;
     g = config.state.LEDOn;
-    b = config.state.LEDOn == false ? true : false;
+    b = !config.state.LEDOn;
     break;
   //BLUE
   case 3:
-    r = config.state.LEDOn == false ? true : false;
-    g = config.state.LEDOn == false ? true : false;
+    r = !config.state.LEDOn;
+    g = !config.state.LEDOn;
     b = config.state.LEDOn;
     break;
   default:
@@ -522,15 +569,15 @@ void coreroutineSetLEDBuzzer(uint8_t color, uint8_t isBlink, int32_t blinkCount,
     int32_t blinkCounter = 0;
     while (blinkCounter < blinkCount)
     {
-      digitalWrite(config.state.pinLEDR, config.state.LEDOn == false ? true : false);
-      digitalWrite(config.state.pinLEDG, config.state.LEDOn == false ? true : false);
-      digitalWrite(config.state.pinLEDB, config.state.LEDOn == false ? true : false);
-      digitalWrite(config.state.pinBuzz, HIGH);
-      //logger->debug(PSTR(__func__), PSTR("Blinking LED and Buzzing, blinkDelay: %d, blinkCount: %d\n"), blinkDelay, blinkCount);
-      vTaskDelay(pdMS_TO_TICKS(blinkDelay));
       digitalWrite(config.state.pinLEDR, r);
       digitalWrite(config.state.pinLEDG, g);
       digitalWrite(config.state.pinLEDB, b);
+      digitalWrite(config.state.pinBuzz, HIGH);
+      //logger->debug(PSTR(__func__), PSTR("Blinking LED and Buzzing, blinkDelay: %d, blinkCount: %d\n"), blinkDelay, blinkCount);
+      vTaskDelay(pdMS_TO_TICKS(blinkDelay));
+      digitalWrite(config.state.pinLEDR, !r);
+      digitalWrite(config.state.pinLEDG, !g);
+      digitalWrite(config.state.pinLEDB, !b);
       digitalWrite(config.state.pinBuzz, LOW);
       //logger->debug(PSTR(__func__), PSTR("Stop Blinking LED and Buzzing.\n"));
       vTaskDelay(pdMS_TO_TICKS(blinkDelay));
@@ -1145,7 +1192,7 @@ void coreroutineSetFInit(bool fInit){
 }
 
 
-void coreroutineEnviroSensorTaskRoutine(void *arg) {
+void coreroutineWaterSensorTaskRoutine(void *arg) {
   float lux, rh, temp;
 
   // Variables for telemetry data aggregation
@@ -1170,7 +1217,7 @@ void coreroutineEnviroSensorTaskRoutine(void *arg) {
   uint16_t aStatusRegister = 0u;
   static int16_t error = sht.readStatusRegister(aStatusRegister);
   if (error != NO_ERROR) {
-    logger->error(PSTR(__func__), PSTR("Error trying to execute readStatusRegister(): %d"), error);
+    logger->error(PSTR(__func__), PSTR("Error trying to execute readStatusRegister(): %d \n"), error);
     appState.fSHTSensor = false;
   }
   else{
@@ -1180,7 +1227,7 @@ void coreroutineEnviroSensorTaskRoutine(void *arg) {
   logger->debug(PSTR(__func__), PSTR("aStatusRegister: %u\n"), aStatusRegister);
   error = sht.startPeriodicMeasurement(REPEATABILITY_MEDIUM, MPS_ONE_PER_SECOND);
   if (error != NO_ERROR) {
-    logger->error(PSTR(__func__), PSTR("Error trying to execute startPeriodicMeasurement(): %d"), error);
+    logger->error(PSTR(__func__), PSTR("Error trying to execute startPeriodicMeasurement(): %d \n"), error);
     appState.fSHTSensor = false;
   }
   else{
@@ -1640,7 +1687,8 @@ void coreroutineRunIoT(){
           }
           #endif
 
-          coreroutineSyncClientAttr(2);          
+          coreroutineSyncClientAttr(2);
+          coreroutineSetLEDBuzzer(3, false, 3, 50);         
           logger->info(PSTR(__func__),PSTR("IoT Connected!\n"));
         }
       }

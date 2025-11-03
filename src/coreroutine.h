@@ -17,6 +17,10 @@
 #include <ErriezBH1750.h>
 #endif
 
+#ifdef USE_MAX17048
+#include "MAX17048.h"
+#endif
+
 // Now include main.h which includes other dependencies
 // (main.h will include this header back via circular include, but the #ifndef guard prevents infinite recursion)
 #include "main.h"
@@ -80,6 +84,10 @@ extern SensirionI2cSht4x sht;
 extern BH1750 bh1750;
 #endif
 
+#ifdef USE_MAX17048
+extern MAX17048 max17048;
+#endif
+
 #ifdef USE_LOCAL_WEB_INTERFACE
     extern AsyncWebServer http;
     extern AsyncWebSocket ws;
@@ -126,6 +134,10 @@ void coreroutineSyncClientAttr(uint8_t direction);
     void iotFinishedCallback(const bool & success);
 #endif
 
-void coreroutineEnviroSensorTaskRoutine(void *arg);
+#ifdef USE_MAX17048
+void coreroutineReadBatteryGauge();
+#endif
+
+void coreroutineWaterSensorTaskRoutine(void *arg);
 
 #endif

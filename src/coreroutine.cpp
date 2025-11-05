@@ -521,6 +521,12 @@ void coreroutineAlarmTaskRoutine(void *arg){
           #ifdef USE_LOCAL_WEB_INTERFACE
           wsBcast(doc);
           #endif
+
+          #ifdef USE_IOT
+          doc.clear();
+          doc[PSTR("alarm")] = alarmMsg.code;
+          iotSendTele(doc);
+          #endif
         }
         coreroutineSetLEDBuzzer(alarmMsg.color, alarmMsg.blinkCount > 0 ? true : false, alarmMsg.blinkCount, alarmMsg.blinkDelay);
         logger->debug(PSTR(__func__), PSTR("Alarm code: %d, color: %d, blinkCount: %d, blinkDelay: %d\n"), alarmMsg.code, alarmMsg.color, alarmMsg.blinkCount, alarmMsg.blinkDelay);
@@ -1254,10 +1260,12 @@ void coreroutineWaterSensorTaskRoutine(void *arg) {
   }
   #else
   sht.begin(Wire, SHT40_I2C_ADDR_44);
+  appState.fSHTSensor = true;
   #endif
 
   #ifdef USE_BH1750
   bh1750.begin(ModeContinuous, ResolutionMid);
+  appState.fBHSensor = true;
   #endif
 
   while (true) {

@@ -134,6 +134,7 @@ void coreroutineSetup(){
     tb.Subscribe_API_Implementation(IAPIOta);
     #endif
   }
+  coreroutineSetAlarm(0, 1, 3, 50);
 }
 
 void coreroutineLoop(){

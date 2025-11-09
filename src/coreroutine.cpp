@@ -251,17 +251,11 @@ void coreroutineLoop(){
         appState.lastAttrBcast = now;
       }
     #endif
-
-  #ifdef USE_MAX17048
-  if(now - appState.lastBattGaugeRead > appState.intvReadBattGauge * 1000){
-    coreroutineReadBatteryGauge();
-    appState.lastBattGaugeRead = now;
-  }
-  #endif
 }
 
 #ifdef USE_MAX17048
 void coreroutineReadBatteryGauge(){
+  unsigned long now = millis();
   appState.fBattSensor = !isnan(max17048.id());
   appState.battADC = max17048.adc();
   appState.battVolt = max17048.voltage();
@@ -269,17 +263,20 @@ void coreroutineReadBatteryGauge(){
   appState.battAccurPercent = max17048.accuratePercent();
 
   #ifdef USE_IOT
-  JsonDocument doc;
+  if(now - appState.lastBattGaugeSend > appState.intvSendBattGauge * 1000){
+    JsonDocument doc;
 
-  doc[PSTR("battADC")] = appState.battADC;
-  doc[PSTR("battVolt")] = appState.battVolt;
-  doc[PSTR("battPercent")] = appState.battPercent;
-  doc[PSTR("battAccurPercent")] = appState.battAccurPercent;
-  iotSendTele(doc);
-  #endif
+    doc[PSTR("battADC")] = appState.battADC;
+    doc[PSTR("battVolt")] = appState.battVolt;
+    doc[PSTR("battPercent")] = appState.battPercent;
+    doc[PSTR("battAccurPercent")] = appState.battAccurPercent;
+    iotSendTele(doc);
+    #endif
 
-  logger->debug(PSTR(__func__), PSTR("Battery - ADC: %.2f, Volt: %.2fV, Percent: %.2f%%, Accurate: %.2f%%\n"), 
-    appState.battADC, appState.battVolt, appState.battPercent, appState.battAccurPercent);
+    /*logger->debug(PSTR(__func__), PSTR("Battery - ADC: %.2f, Volt: %.2fV, Percent: %.2f%%, Accurate: %.2f%%\n"), 
+      appState.battADC, appState.battVolt, appState.battPercent, appState.battAccurPercent);*/
+    appState.lastBattGaugeSend = now;
+  }
 }
 #endif
 
@@ -1029,11 +1026,11 @@ void coreroutineOnWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client
           }
           if (doc[PSTR("setConfig")][PSTR("cfg")][PSTR("provDK")].is<const char*>() && strlen(doc[PSTR("setConfig")][PSTR("cfg")][PSTR("provDK")].as<const char*>()) > 0) {
           strlcpy(config.state.provDK, doc[PSTR("setConfig")][PSTR("cfg")][PSTR("provDK")].as<const char*>(), sizeof(config.state.provDK));
-          logger->debug(PSTR(__func__), PSTR("provDK: %s\n"), doc[PSTR("setConfig")][PSTR("cfg")][PSTR("provDK")].as<const char*>());
+          //logger->debug(PSTR(__func__), PSTR("provDK: %s\n"), doc[PSTR("setConfig")][PSTR("cfg")][PSTR("provDK")].as<const char*>());
           }
           if (doc[PSTR("setConfig")][PSTR("cfg")][PSTR("provDS")].is<const char*>() && strlen(doc[PSTR("setConfig")][PSTR("cfg")][PSTR("provDS")].as<const char*>()) > 0) {
           strlcpy(config.state.provDS, doc[PSTR("setConfig")][PSTR("cfg")][PSTR("provDS")].as<const char*>(), sizeof(config.state.provDS));
-          logger->debug(PSTR(__func__), PSTR("provDS: %s\n"), doc[PSTR("setConfig")][PSTR("cfg")][PSTR("provDS")].as<const char*>());
+          //logger->debug(PSTR(__func__), PSTR("provDS: %s\n"), doc[PSTR("setConfig")][PSTR("cfg")][PSTR("provDS")].as<const char*>());
           }
           #endif
         }
@@ -1153,6 +1150,7 @@ void coreroutineSyncClientAttr(uint8_t direction){
 
     doc.clear();
     JsonObject cfg = doc[PSTR("cfg")].to<JsonObject>();
+    cfg[PSTR("hwid")] = config.state.hwid;
     cfg[PSTR("name")] = config.state.name;
     cfg[PSTR("model")] = config.state.model;
     cfg[PSTR("group")] = config.state.group;
@@ -1567,11 +1565,11 @@ void coreroutineRunIoT(){
         const Provision_Callback provisionCallback(Access_Token(), &coreroutineProcessTBProvResp, config.state.provDK, config.state.provDS, config.state.hwid, IOT_PROVISIONING_TIMEOUT * 1000000, &coreroutineIoTProvRequestTimedOut);
         if(IAPIProv.Provision_Request(provisionCallback))
         {
-          logger->info(PSTR(__func__),PSTR("Connected to provisioning server: %s:%d. Sending provisioning response: DK: %s, DS: %s, Id: %s \n"),  
-            config.state.tbAddr, config.state.tbPort, config.state.provDK, config.state.provDS, config.state.hwid);
+          logger->info(PSTR(__func__),PSTR("Connected to provisioning server: %s:%d. ID: %s \n"),  
+            config.state.tbAddr, config.state.tbPort, config.state.hwid);
         }
         else{
-          logger->warn(PSTR(__func__), PSTR("Provision request failed: %s:%d DK:%s DS:%s ID:%S\n"), config.state.tbAddr, config.state.tbPort, config.state.provDK, config.state.provDS, config.state.hwid);
+          logger->warn(PSTR(__func__), PSTR("Provision request failed: %s:%d. ID:%S\n"), config.state.tbAddr, config.state.tbPort, config.state.hwid);
         }
       }
       else

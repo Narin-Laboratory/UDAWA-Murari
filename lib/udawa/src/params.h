@@ -114,7 +114,7 @@ const unsigned long enviroSensorAlarmTimer = 30; //in second
 // Absolute validity still uses sensor spec (e.g., temp -40..125, RH 0..100)
 const float tempSafeHigh = 50.0;  // deg C
 const float tempSafeLow  = 5.0;   // deg C
-const float rhSafeHigh   = 99.0;  // %RH
+const float rhSafeHigh   = 85.0;  // %RH
 const float rhSafeLow    = 15.0;  // %RH
 
 /**

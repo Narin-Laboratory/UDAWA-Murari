@@ -226,6 +226,7 @@ void coreroutineLoop(){
         sysInfo[PSTR("datetime")] = RTC.getDateTime();
         sysInfo[PSTR("rssi")] = wiFiHelper.rssiToPercent(WiFi.RSSI());
         #ifdef USE_MAX17048
+        coreroutineReadBatteryGauge();
         sysInfo[PSTR("batt")] = appState.battAccurPercent > 100.0 ? 100.0 : appState.battAccurPercent;
         #else
         sysInfo[PSTR("batt")] = 100;

@@ -68,7 +68,7 @@ struct AppState {
     float battPercent = 0.0;
     float battAccurPercent = 0.0;
     unsigned long lastBattGaugeSend = 0;
-    uint16_t intvSendBattGauge = 60;
+    uint16_t intvSendBattGauge = 900;
 
 };
 
